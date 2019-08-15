@@ -52,5 +52,22 @@ class DictClient:
         else:
             return False
 
+    def search_word(self, name, word):
+        send_msg = self.__generate_msg("word", name=name, word=word)
+        self.__socket.send(send_msg)
+        result = self.__socket.recv(1024)
+        if result == b'fail':
+            return False
+        else:
+            return result.decode()
+
+    def get_history(self, name):
+        send_msg = self.__generate_msg("history", name=name)
+        self.__socket.send(send_msg)
+        result = self.__socket.recv(4096).decode()
+        if result == b'fail':
+            return False
+        return result
+
     def exit(self):
         self.__socket.close()

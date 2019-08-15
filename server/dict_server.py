@@ -64,6 +64,12 @@ class DictServer:
                 self.__register(connfd, **kwargs)
             elif cmd == "login":
                 self.__login(connfd, **kwargs)
+            elif cmd == "word":
+                self.__search_word(connfd, **kwargs)
+            elif cmd == "history":
+                self.__get_history(connfd, **kwargs)
+            else:
+                print("Receive an unknown cmd:%s" % cmd)
         connfd.close()
 
     def __register(self, connfd, name, passwd):
@@ -88,3 +94,28 @@ class DictServer:
         hash = hashlib.md5(b"%g#o")
         hash.update(passwd.encode())
         return hash.hexdigest()
+
+    def __search_word(self, connfd, name, word):
+        # id word mean
+        ret = self.__db_operator.query("words", "word='%s'" % word)
+        if not ret:
+            connfd.send(b'fail')
+            return
+
+        explain = ret[0][2]
+
+        self.__db_operator.insert("history", name=name, word=word)
+
+        connfd.send(explain.encode())
+
+    def __get_history(self, connfd, name):
+        # id name word time
+        ret = self.__db_operator.query("history", "name='%s' order by time desc" % name, 10)
+        if not ret:
+            connfd.send(b'fail')
+            return
+        send_data = ""
+        for row in ret:
+            send_data += "word:%s, time:%s\n" % (row[2], row[3])
+
+        connfd.send(send_data.encode())

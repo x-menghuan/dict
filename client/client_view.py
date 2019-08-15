@@ -12,6 +12,7 @@ class ClientView:
         self.__client = client
         self.__is_running = True
         self.__is_login = False
+        self.__user_name = None
 
     def run(self):
         while self.__is_running:
@@ -71,11 +72,52 @@ class ClientView:
             ret = self.__client.login(name, passwd)
             if ret:
                 print("登录成功")
+                self.__user_name = name
+                self.__is_login = True
                 break
             else:
                 res = input("登录失败,是否重新登录(y/n)?")
                 if res != 'y':
                     break
+
+        while self.__is_login:
+            self.__show_login_menu()
+
+    def __show_login_menu(self):
+        print("""
+        ***********欢迎进入查询字典系统***********
+                        1.查询单词
+                        2.历史记录
+                        3.注销登录
+        ******************************************
+        """)
+        select = input("请输入:")
+        if select == '1':
+            self.__search_word()
+        elif select == '2':
+            self.__get_history()
+        elif select == '3':
+            self.__is_login = False
+        else:
+            print("输入有误")
+
+    def __search_word(self):
+        while True:
+            word = input("请输入需要查询的单词(#号结束查询):")
+            if word == "#":
+                break
+            ret = self.__client.search_word(self.__user_name, word)
+            if ret is False:
+                print("没有查到这个单词")
+            else:
+                print("%s的解释是: %s" % (word, ret))
+
+    def __get_history(self):
+        result = self.__client.get_history(self.__user_name)
+        if result is False:
+            print("没有历史记录")
+        else:
+            print(result)
 
     def __exit(self):
         print("谢谢使用")
